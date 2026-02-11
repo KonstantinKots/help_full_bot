@@ -6,3 +6,4 @@ A bot that will help you dally task
 2) Run code with commad:
 ```bash
 python main.py
+```
