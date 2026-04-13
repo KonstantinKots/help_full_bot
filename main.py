@@ -1,10 +1,11 @@
 from datetime import datetime
+from id_generator import id_generator
 
 '''
 Додаток для збереження нотаток
 
 This is my note, that I am talking on my laptop
-- Created on 09.02.2026 19:45 ❤
+- Created on 09.02.2026 19:45 ❤😊
 
 [("This is my note, that I am talking on my laptop", "09.02.2026 19:45")]
 [("09.02.2026 19:45", "This is my note, that I am talking on my laptop")]
@@ -15,10 +16,12 @@ This is my note, that I am talking on my laptop
 2) написати функцію яка буде виводити нотатки
 3) написати функцію яка буде виводити всі нотатки
 4) написати цикл який буде отримувати інформацію від користувача та реагувати на неї
+5) пофіксити проблему глобальної змінної
 '''
 
-note_list = [] #[{"text": "This is my note, that I am talking on my laptop", "creation_date": "09.02.2026 19:45"}]
+note_list = [] #[{"text": "This is my note, that I am talking on my laptop", "creation_date": "09.02.2026 19:45", id: 1}]
 note_file = "notes.txt"
+note_id_generator = id_generator()
 
 # Hello note; 09.02.2026 19:45
 
@@ -46,36 +49,62 @@ commands ='''
 
 def add_new_note(note_text) -> bool:
     note_creation_date = datetime.today()
-    note_list.append({"text": note_text, "creation_date": note_creation_date})
+    next_id = note_id_generator()
+    note_list.append({"text": note_text, "creation_date": note_creation_date, "id": next_id})
     return True
 
 def print_note(index: int):
     note = note_list[index]
-    #09.02.2026 19:45 dd:mm:yyyy hh:mm
     formatted_creation_date = note["creation_date"].strftime("%d.%m.%Y %H:%M")
-    print(f'"{note["text"]}"\n- Created on {formatted_creation_date}\n')
+    print(f'{note["id"]}: "{note["text"]}"\n- Created on {formatted_creation_date}\n')
 
 def print_all_note():
     for note_index in range(len(note_list)):
-        print_note(note_index)
+       print_note(note_index)
+
+# def find_top_note_id(notes: list[dict]) -> int:
+#     max_id = 0
+#     for note in notes:
+#         note_id = note["id"]
+#         if note_id > max_id:
+#             max_id = note_id
+#     return max_id
+
+# def find_top_note_id_funcional(notes: list[dict]) -> int:
+#     note_ids =[0]
+#     for note in notes:
+#         note_ids.append(note["id"])
+#     return max(note_ids)
+
+def find_top_note_id_funcional(notes: list[dict]) -> int:
+    return max([note["id"] for note in notes] + [0])
+
 
 def save_notes():
     with open(note_file, 'w', encoding='utf-8') as file:
         for note in note_list:
-            file.write(f"{note["text"]};{note["creation_date"]}\n") #\n для запису нової нотатки з нової строки
+            file.write(f"{note["id"]};{note['text']};{note['creation_date']}\n")
 
 def read_notes() -> list[dict]:
     note_list = []
     with open(note_file) as file:
         for line in file:
-            text, date = line.strip().split(';')
+            if ";" not in line:
+                continue
+            id, text, date = line.strip().split(';')
             creation_date = datetime.strptime(date, "%Y-%m-%d %H:%M:%S.%f")
-            note_list.append({"text": text, "creation_date": creation_date})
+            note_list.append({"id": int(id), "text": text, "creation_date": creation_date})
     return note_list
 
 def init():
     global note_list
-    note_list = read_notes() #при запуску програми файл зчитує старі нотатки
+    note_list = read_notes()
+
+    max_note = find_top_note_id_funcional(note_list)
+
+    global note_id_generator
+    note_id_generator = id_generator(max_note)
+
     print(welcom_banner)
     print("\nHello and welcome to our app!\n")
     print(commands)
@@ -85,7 +114,7 @@ def main():
     while (True):
         command, *args = input("Please enter your command (enter exit to stop): ").strip().split(" ")
         if command == "exit":
-            save_notes() # після введення exit викликаємо зберігання нотаток
+            save_notes()
             print("Goodbye!")
             break
         elif command == "add_note":
@@ -101,19 +130,15 @@ def main():
             if index < 0 or index >= len(note_list):
                 print("Please enter a valid note number")
                 continue
-            print_note(index)
-        elif command == "print_all": #дописати функцію
-            print()
+            else:
+                print_note(index)
+        elif command == "print_all":
+            if not note_list:
+                print("Notes file is empty")
+                continue
+            print_all_note()
+        
 
 init()
 main()
 
-# text = input("Please enter note text: ")
-# add_new_note(text)
-# add_new_note(text)
-# add_new_note(text)
-# add_new_note(text)
-# add_new_note(text)
-
-# print_all_note()
-#Ctrl C
